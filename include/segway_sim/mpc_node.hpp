@@ -10,6 +10,7 @@
 #include "segway_sim/goalSetAndState.h"
 #include "segway_sim/linearMatrices.h"
 #include "segway_sim/common.hpp"
+#include "segway_sim/stateAndAction.h"
 #include "ambercortex_ros/state.h"
 #include "ambercortex_ros/cmd.h"
 #include "sensor_msgs/Joy.h"
@@ -19,8 +20,8 @@
 #include <string>
 #include <ros/package.h>
 #include <osqp.h>
-#include <mpc.hpp>
-#include <segway_example.hpp>
+#include <mpc/mpc.hpp>
+#include <mpc/segway_example.hpp>
 
 #define MSG_MODE 'M'
 

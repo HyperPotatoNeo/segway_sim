@@ -57,7 +57,7 @@ def main():
     momdp     = pickle.load(pickle_in)
 
     # Init Environment
-    loc        = (1, 0, 1)
+    loc        = (1, 1, 0)
     initBelief = [0.9, 0.6, 0.75]
 
     xt         = [0]

@@ -35,8 +35,8 @@ find_package(catkin REQUIRED COMPONENTS
 #   set(OSQP_MODE "osqp")
 #   set(OSQP_MODE_LIB "osqpstatic")
 # endif()
-set(OSQP_MODE "osqp_embedded")
-set(OSQP_MODE_LIB "osqp_embedded")
+set(OSQP_MODE "osqp")
+set(OSQP_MODE_LIB "osqpstatic")
 # Find OSQP library and headers
 find_package(${OSQP_MODE} REQUIRED CONFIG)
 
@@ -61,6 +61,7 @@ add_message_files(
   optSol.msg
   linearMatrices.msg
   lowLevelLog.msg
+  stateAndAction.msg
 )
 
 # Generate services in the 'srv' folder

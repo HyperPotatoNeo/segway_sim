@@ -15,6 +15,7 @@ ros::Publisher pub_inputAct_;
 ros::Publisher pub_stateNominal_;
 ros::Publisher pub_optSol_;
 ros::Publisher pub_linearMat;
+ros::Publisher pub_stateAndAction;
 
 segway_sim::state stateCurrent_;
 ambercortex_ros::state stateCurrent_hw_;
@@ -24,6 +25,7 @@ segway_sim::state stateNominal_;
 segway_sim::goalSetAndState goalSetAndState_;
 segway_sim::optSol optSol_;
 segway_sim::linearMatrices linearMatrices_;
+segway_sim::stateAndAction stateAndAction_;
 
 ros::Time ros_time_init;
 ros::Time ros_time_end;
@@ -62,6 +64,8 @@ bool hardware_ = false;
 ros::Time last_button;
 int btn_init, btn_run, btn_backup, btn_l1, btn_r1;
 
+int ml_data_mode;
+
 //// Functions Definition
 void sendToSegway(void)
 {
@@ -95,9 +99,20 @@ void sendToSegway(void)
 		pub_inputAct_.publish(segway_msg);
 	}
 	else {
-		pub_inputAct_.publish(inputAct_);				
+		if(ml_data_mode!=2)
+			pub_inputAct_.publish(inputAct_);				
 		pub_stateNominal_.publish(stateNominal_);
 	}
+}
+
+void sendData(void)
+{
+	stateAndAction_.cur_state = stateCurrent_;
+	stateAndAction_.cur_input = inputAct_;
+	stateAndAction_.cur_state.psi = stateAndAction_.cur_state.psi - offset_angle_;
+	stateAndAction_.cur_state.stateVec[5] = stateAndAction_.cur_state.stateVec[5] - offset_angle_;
+
+	pub_stateAndAction.publish(stateAndAction_);
 }
 
 void stateCallback(const segway_sim::state::ConstPtr msg)
@@ -181,12 +196,14 @@ int main (int argc, char *argv[])
 	} else {
 		ROS_INFO("Running in simulation");
 		sub_state_ = nh_->subscribe<segway_sim::state>("state_true", 1, stateCallback);
-		pub_inputAct_ = nh_->advertise<segway_sim::input>("mpc_input", 1);
+		if(ml_data_mode!=2)
+			pub_inputAct_ = nh_->advertise<segway_sim::input>("mpc_input", 1);
 	}
 	sub_goalSetAndState_   = nh_->subscribe<segway_sim::goalSetAndState>("goalSetAndState", 1, goalSetAndStateCallback);
 	pub_stateNominal_ = nh_->advertise<segway_sim::state>("state_nominal", 1);
 	pub_optSol_       = nh_->advertise<segway_sim::optSol>("optimal_sol", 1);
 	pub_linearMat     = nh_->advertise<segway_sim::linearMatrices>("linear_matrices", 1);
+	pub_stateAndAction = nh_->advertise<segway_sim::stateAndAction>("state_and_action", 1);
 
 	// Retrieve ROS parameters
 	nhParams_->param<double>("dt", dt_,0.05);
@@ -207,6 +224,8 @@ int main (int argc, char *argv[])
 	nhParams_->param<double>("e_psiDot"  , e_psiDot,0.);
 	nhParams_->param<double>("enlarge"   , enlarge,0.);
 	nhParams_->param<double>("/segway_sim/low_level/low_level_active"   , lowLevelActive,0.);
+
+	nhParams_->param<int>("ml_data_mode", ml_data_mode, 0); //0 for regular mpc control; 1 for collecting data from mpc opt policy; 2 for dagger
 
 	ros::param::get("~_btn_init", btn_init);
 	ros::param::get("~_btn_run", btn_run);
@@ -488,6 +507,9 @@ int main (int argc, char *argv[])
 				sendToSegway();
 			}
 
+			if(ml_data_mode!=0){
+				sendData();
+			}
 		}
 		//Wait for tick
 		rate.sleep();
